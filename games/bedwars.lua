@@ -73,7 +73,7 @@ local function addBlur(parent)
 	blur.Size = UDim2.new(1, 89, 1, 52)
 	blur.Position = UDim2.fromOffset(-48, -31)
 	blur.BackgroundTransparency = 1
-	blur.Image = getcustomasset('newvape/assets/new/blur.png')
+	blur.Image = getcustomasset('crystalvape/assets/new/blur.png')
 	blur.ScaleType = Enum.ScaleType.Slice
 	blur.SliceCenter = Rect.new(52, 31, 261, 502)
 	blur.Parent = parent
@@ -2239,12 +2239,9 @@ run(function()
 										lastSwingServerTimeDelta = 0.5,
 										entityInstance = v.Character,
 										validate = {
-											raycast = {
-												cameraPosition = {value = pos},
-												cursorDirection = {value = dir}
-											},
+											raycast = {},
 											targetPosition = {value = actualRoot.Position},
-											selfPosition = {value = pos}
+											selfPosition = {value = vector.create(0/0,0/0,0/0)}
 										}
 									})
 								end
@@ -4655,47 +4652,6 @@ run(function()
 end)
 	
 run(function()
-	local MissileTP
-	
-	MissileTP = vape.Categories.Utility:CreateModule({
-		Name = 'MissileTP',
-		Function = function(callback)
-			if callback then
-				MissileTP:Toggle()
-				local plr = entitylib.EntityMouse({
-					Range = 1000,
-					Players = true,
-					Part = 'RootPart'
-				})
-	
-				if getItem('guided_missile') and plr then
-					local projectile = bedwars.RuntimeLib.await(bedwars.GuidedProjectileController.fireGuidedProjectile:CallServerAsync('guided_missile'))
-					if projectile then
-						local projectilemodel = projectile.model
-						if not projectilemodel.PrimaryPart then
-							projectilemodel:GetPropertyChangedSignal('PrimaryPart'):Wait()
-						end
-	
-						local bodyforce = Instance.new('BodyForce')
-						bodyforce.Force = Vector3.new(0, projectilemodel.PrimaryPart.AssemblyMass * workspace.Gravity, 0)
-						bodyforce.Name = 'AntiGravity'
-						bodyforce.Parent = projectilemodel.PrimaryPart
-	
-						repeat
-							projectile.model:SetPrimaryPartCFrame(CFrame.lookAlong(plr.RootPart.CFrame.p, gameCamera.CFrame.LookVector))
-							task.wait(0.1)
-						until not projectile.model or not projectile.model.Parent
-					else
-						notif('MissileTP', 'Missile on cooldown.', 3)
-					end
-				end
-			end
-		end,
-		Tooltip = 'Spawns and teleports a missile to a player\nnear your mouse.'
-	})
-end)
-	
-run(function()
 	local PickupRange
 	local Range
 	local Network
@@ -4756,48 +4712,6 @@ run(function()
 		Default = true
 	})
 	Lower = PickupRange:CreateToggle({Name = 'Feet Check'})
-end)
-	
-run(function()
-	local RavenTP
-	
-	RavenTP = vape.Categories.Utility:CreateModule({
-		Name = 'RavenTP',
-		Function = function(callback)
-			if callback then
-				RavenTP:Toggle()
-				local plr = entitylib.EntityMouse({
-					Range = 1000,
-					Players = true,
-					Part = 'RootPart'
-				})
-	
-				if getItem('raven') and plr then
-					bedwars.Client:Get(remotes.SpawnRaven):CallServerAsync():andThen(function(projectile)
-						if projectile then
-							local bodyforce = Instance.new('BodyForce')
-							bodyforce.Force = Vector3.new(0, projectile.PrimaryPart.AssemblyMass * workspace.Gravity, 0)
-							bodyforce.Parent = projectile.PrimaryPart
-	
-							if plr then
-								task.spawn(function()
-									for _ = 1, 20 do
-										if plr.RootPart and projectile then
-											projectile:SetPrimaryPartCFrame(CFrame.lookAlong(plr.RootPart.Position, gameCamera.CFrame.LookVector))
-										end
-										task.wait(0.05)
-									end
-								end)
-								task.wait(0.3)
-								bedwars.RavenController:detonateRaven()
-							end
-						end
-					end)
-				end
-			end
-		end,
-		Tooltip = 'Spawns and teleports a raven to a player\nnear your mouse.'
-	})
 end)
 	
 run(function()
@@ -6356,7 +6270,7 @@ run(function()
 		close.Position = UDim2.new(1, -35, 0, 9)
 		close.BackgroundColor3 = Color3.new(1, 1, 1)
 		close.BackgroundTransparency = 1
-		close.Image = getcustomasset('newvape/assets/new/close.png')
+		close.Image = getcustomasset('crystalvape/assets/new/close.png')
 		close.ImageColor3 = color.Light(uipallet.Text, 0.2)
 		close.ImageTransparency = 0.5
 		close.AutoButtonColor = false
@@ -6470,7 +6384,7 @@ run(function()
 		searchicon.Size = UDim2.fromOffset(14, 14)
 		searchicon.Position = UDim2.new(1, -26, 0, 8)
 		searchicon.BackgroundTransparency = 1
-		searchicon.Image = getcustomasset('newvape/assets/new/search.png')
+		searchicon.Image = getcustomasset('crystalvape/assets/new/search.png')
 		searchicon.ImageColor3 = color.Light(uipallet.Main, 0.37)
 		searchicon.Parent = searchbkg
 		local children = Instance.new('ScrollingFrame')
@@ -6611,7 +6525,7 @@ run(function()
 		textbuttonicon.Position = UDim2.fromScale(0.5, 0.5)
 		textbuttonicon.AnchorPoint = Vector2.new(0.5, 0.5)
 		textbuttonicon.BackgroundTransparency = 1
-		textbuttonicon.Image = getcustomasset('newvape/assets/new/add.png')
+		textbuttonicon.Image = getcustomasset('crystalvape/assets/new/add.png')
 		textbuttonicon.ImageColor3 = Color3.fromHSV(0.46, 0.96, 0.52)
 		textbuttonicon.Parent = textbutton
 		local childrenlist = Instance.new('Frame')
@@ -6704,7 +6618,7 @@ run(function()
 			close.Position = UDim2.new(1, -23, 0, 6)
 			close.BackgroundColor3 = Color3.new(1, 1, 1)
 			close.BackgroundTransparency = 1
-			close.Image = getcustomasset('newvape/assets/new/closemini.png')
+			close.Image = getcustomasset('crystalvape/assets/new/closemini.png')
 			close.ImageColor3 = color.Light(uipallet.Text, 0.2)
 			close.ImageTransparency = 0.5
 			close.AutoButtonColor = false
@@ -7170,7 +7084,7 @@ run(function()
 						Size = UDim2.new(1, 89, 1, 52),
 						Position = UDim2.fromOffset(-48, -31),
 						BackgroundTransparency = 1,
-						Image = getcustomasset('newvape/assets/new/blur.png'),
+						Image = getcustomasset('crystalvape/assets/new/blur.png'),
 						ScaleType = Enum.ScaleType.Slice,
 						SliceCenter = Rect.new(52, 31, 261, 502)
 					}),
@@ -8490,4 +8404,69 @@ run(function()
 		List = WinEffectName
 	})
 end)
+
+-- crystalvape
+
+run(function()
+	local ItemTP
 	
+	ItemTP = vape.Categories.Utility:CreateModule({
+		Name = 'ItemTP',
+		Function = function(callback)
+			if callback then
+				ItemTP:Toggle()
+				local plr = entitylib.EntityMouse({
+					Range = 1000,
+					Players = true,
+					Part = 'RootPart'
+				})
+	
+				if getItem('raven') and plr then
+					bedwars.Client:Get(remotes.SpawnRaven):CallServerAsync():andThen(function(projectile)
+						if projectile then
+							local bodyforce = Instance.new('BodyForce')
+							bodyforce.Force = Vector3.new(0, projectile.PrimaryPart.AssemblyMass * workspace.Gravity, 0)
+							bodyforce.Parent = projectile.PrimaryPart
+	
+							if plr then
+								task.spawn(function()
+									for _ = 1, 20 do
+										if plr.RootPart and projectile then
+											projectile:SetPrimaryPartCFrame(CFrame.lookAlong(plr.RootPart.Position, gameCamera.CFrame.LookVector))
+										end
+										task.wait(0.05)
+									end
+								end)
+								task.wait(0.3)
+								bedwars.RavenController:detonateRaven()
+							end
+						end
+					end)
+				end
+				
+				if getItem('guided_missile') and plr then
+					local projectile = bedwars.RuntimeLib.await(bedwars.GuidedProjectileController.fireGuidedProjectile:CallServerAsync('guided_missile'))
+					if projectile then
+						local projectilemodel = projectile.model
+						if not projectilemodel.PrimaryPart then
+							projectilemodel:GetPropertyChangedSignal('PrimaryPart'):Wait()
+						end
+	
+						local bodyforce = Instance.new('BodyForce')
+						bodyforce.Force = Vector3.new(0, projectilemodel.PrimaryPart.AssemblyMass * workspace.Gravity, 0)
+						bodyforce.Name = 'AntiGravity'
+						bodyforce.Parent = projectilemodel.PrimaryPart
+	
+						repeat
+							projectile.model:SetPrimaryPartCFrame(CFrame.lookAlong(plr.RootPart.CFrame.p, gameCamera.CFrame.LookVector))
+							task.wait(0.1)
+						until not projectile.model or not projectile.model.Parent
+					else
+						notif('ItemTP', 'Missile on cooldown.', 3)
+					end
+				end
+			end
+		end,
+		Tooltip = 'Spawns and teleports a raven OR missile to a player\nnear your mouse.'
+	})
+end)

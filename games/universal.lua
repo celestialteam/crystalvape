@@ -14,7 +14,7 @@ end
 local function downloadFile(path, func)
 	if not isfile(path) then
 		local suc, res = pcall(function()
-			return game:HttpGet('https://raw.githubusercontent.com/7GrandDadPGN/VapeV4ForRoblox/'..readfile('newvape/profiles/commit.txt')..'/'..select(1, path:gsub('newvape/', '')), true)
+			return game:HttpGet('https://raw.githubusercontent.com/celestialteam/crystalvape/'..readfile('crystalvape/profiles/commit.txt')..'/'..select(1, path:gsub('crystalvape/', '')), true)
 		end)
 		if not suc or res == '404: Not Found' then
 			error(res)
@@ -72,7 +72,7 @@ local function addBlur(parent)
 	blur.Size = UDim2.new(1, 89, 1, 52)
 	blur.Position = UDim2.fromOffset(-48, -31)
 	blur.BackgroundTransparency = 1
-	blur.Image = getcustomasset('newvape/assets/new/blur.png')
+	blur.Image = getcustomasset('crystalvape/assets/new/blur.png')
 	blur.ScaleType = Enum.ScaleType.Slice
 	blur.SliceCenter = Rect.new(52, 31, 261, 502)
 	blur.Parent = parent
@@ -219,9 +219,9 @@ local function motorMove(target, cf)
 	task.delay(0, part.Destroy, part)
 end
 
-local hash = loadstring(downloadFile('newvape/libraries/hash.lua'), 'hash')()
-local prediction = loadstring(downloadFile('newvape/libraries/prediction.lua'), 'prediction')()
-entitylib = loadstring(downloadFile('newvape/libraries/entity.lua'), 'entitylibrary')()
+local hash = loadstring(downloadFile('crystalvape/libraries/hash.lua'), 'hash')()
+local prediction = loadstring(downloadFile('crystalvape/libraries/prediction.lua'), 'prediction')()
+entitylib = loadstring(downloadFile('crystalvape/libraries/entity.lua'), 'entitylibrary')()
 local whitelist = {
 	alreadychecked = {},
 	customtags = {},
@@ -430,24 +430,24 @@ run(function()
 					local oldchannel = textChatService.ChatInputBarConfiguration.TargetTextChannel
 					local newchannel = cloneref(game:GetService('RobloxReplicatedStorage')).ExperienceChat.WhisperChat:InvokeServer(v.UserId)
 					if newchannel then
-						newchannel:SendAsync('helloimusinginhaler')
+						newchannel:SendAsync('helloimusingcrystals')
 					end
 					textChatService.ChatInputBarConfiguration.TargetTextChannel = oldchannel
 				elseif replicatedStorage:FindFirstChild('DefaultChatSystemChatEvents') then
-					replicatedStorage.DefaultChatSystemChatEvents.SayMessageRequest:FireServer('/w '..v.Name..' helloimusinginhaler', 'All')
+					replicatedStorage.DefaultChatSystemChatEvents.SayMessageRequest:FireServer('/w '..v.Name..' helloimusingcrystals', 'All')
 				end
 			end
 		end
 	end
 
 	function whitelist:process(msg, plr)
-		if plr == lplr and msg == 'helloimusinginhaler' then return true end
+		if plr == lplr and msg == 'helloimusingcrystals' then return true end
 
-		if self.localprio > 0 and not self.said[plr.Name] and msg == 'helloimusinginhaler' and plr ~= lplr then
+		if self.localprio > 0 and not self.said[plr.Name] and msg == 'helloimusingcrystals' and plr ~= lplr then
 			self.said[plr.Name] = true
-			notif('Vape', plr.Name..' is using vape!', 60)
+			notif('Vape', plr.Name..' is using crystalvape!', 60)
 			self.customtags[plr.Name] = {{
-				text = 'VAPE USER',
+				text = 'CRYSTALVAPE USER',
 				color = Color3.new(1, 1, 0)
 			}}
 			local newent = entitylib.getEntity(plr)
@@ -554,7 +554,7 @@ run(function()
 			local bubblechat = exp:WaitForChild('bubbleChat', 5)
 			if bubblechat then
 				vape:Clean(bubblechat.DescendantAdded:Connect(function(newbubble)
-					if newbubble:IsA('TextLabel') and newbubble.Text:find('helloimusinginhaler') then
+					if newbubble:IsA('TextLabel') and newbubble.Text:find('helloimusingcrystals') then
 						newbubble.Parent.Parent.Visible = false
 					end
 				end))
@@ -565,19 +565,19 @@ run(function()
 	function whitelist:update(first)
 		local suc = pcall(function()
 			local _, subbed = pcall(function()
-				return game:HttpGet('https://github.com/7GrandDadPGN/whitelists')
+				return game:HttpGet('https://github.com/celestialteam/whitelists')
 			end)
 			local commit = subbed:find('currentOid')
 			commit = commit and subbed:sub(commit + 13, commit + 52) or nil
 			commit = commit and #commit == 40 and commit or 'main'
-			whitelist.textdata = game:HttpGet('https://raw.githubusercontent.com/7GrandDadPGN/whitelists/'..commit..'/PlayerWhitelist.json', true)
+			whitelist.textdata = game:HttpGet('https://raw.githubusercontent.com/celestialteam/whitelists/'..commit..'/PlayerWhitelist.json', true)
 		end)
 		if not suc or not hash or not whitelist.get then return true end
 		whitelist.loaded = true
 
 		if not first or whitelist.textdata ~= whitelist.olddata then
 			if not first then
-				whitelist.olddata = isfile('newvape/profiles/whitelist.json') and readfile('newvape/profiles/whitelist.json') or nil
+				whitelist.olddata = isfile('crystalvape/profiles/whitelist.json') and readfile('crystalvape/profiles/whitelist.json') or nil
 			end
 
 			local suc, res = pcall(function()
@@ -624,7 +624,7 @@ run(function()
 				end
 				whitelist.olddata = whitelist.textdata
 				pcall(function()
-					writefile('newvape/profiles/whitelist.json', whitelist.textdata)
+					writefile('crystalvape/profiles/whitelist.json', whitelist.textdata)
 				end)
 			end
 
@@ -3503,7 +3503,7 @@ run(function()
 		arrow.BackgroundTransparency = 1
 		arrow.BorderSizePixel = 0
 		arrow.Visible = false
-		arrow.Image = getcustomasset('newvape/assets/new/arrowmodule.png')
+		arrow.Image = getcustomasset('crystalvape/assets/new/arrowmodule.png')
 		arrow.ImageColor3 = entitylib.getEntityColor(ent) or Color3.fromHSV(Color.Hue, Color.Sat, Color.Value)
 		arrow.Parent = Folder
 		Reference[ent] = arrow
@@ -5197,7 +5197,7 @@ run(function()
 	
 	Radar = vape:CreateOverlay({
 		Name = 'Radar',
-		Icon = getcustomasset('newvape/assets/new/radaricon.png'),
+		Icon = getcustomasset('crystalvape/assets/new/radaricon.png'),
 		Size = UDim2.fromOffset(14, 14),
 		Position = UDim2.fromOffset(12, 13),
 		Function = function(callback)
@@ -5417,7 +5417,7 @@ run(function()
 	
 	SessionInfo = vape:CreateOverlay({
 		Name = 'Session Info',
-		Icon = getcustomasset('newvape/assets/new/textguiicon.png'),
+		Icon = getcustomasset('crystalvape/assets/new/textguiicon.png'),
 		Size = UDim2.fromOffset(16, 12),
 		Position = UDim2.fromOffset(12, 14),
 		Function = function(callback)
@@ -5486,8 +5486,8 @@ run(function()
 	Hide = SessionInfo:CreateTextList({
 		Name = 'Blacklist',
 		Tooltip = 'Name of entry to hide.',
-		Icon = getcustomasset('newvape/assets/new/blockedicon.png'),
-		Tab = getcustomasset('newvape/assets/new/blockedtab.png'),
+		Icon = getcustomasset('crystalvape/assets/new/blockedicon.png'),
+		Tab = getcustomasset('crystalvape/assets/new/blockedtab.png'),
 		TabSize = UDim2.fromOffset(21, 16),
 		Color = Color3.fromRGB(250, 50, 56)
 	})
@@ -7921,4 +7921,24 @@ run(function()
 	})
 	
 end)
-	
+
+-- crystalvape
+run(function()
+	local InfJump
+
+	InfJump = vape.Categories.Blatant:CreateModule({ -- TODO: add "methods" like HumanoidState, Velocity, CFrame, Impulse ...
+		Name = 'InfJump',
+		Tooltip = 'Allows you to jump mid air',
+		Function = function(callback)
+			if callback then
+				InfJump:Clean(inputService.JumpRequest:Connect(function()
+					local char = lplr.Character
+
+					if char and char:FindFirstChild("Humanoid") then
+						char.Humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+					end
+				end))
+			end
+		end
+	})
+end)

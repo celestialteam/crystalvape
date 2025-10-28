@@ -31,7 +31,7 @@ local playersService = cloneref(game:GetService('Players'))
 local function downloadFile(path, func)
 	if not isfile(path) then
 		local suc, res = pcall(function()
-			return game:HttpGet('https://raw.githubusercontent.com/7GrandDadPGN/VapeV4ForRoblox/'..readfile('newvape/profiles/commit.txt')..'/'..select(1, path:gsub('newvape/', '')), true)
+			return game:HttpGet('https://raw.githubusercontent.com/celestialteam/crystalvape/'..readfile('crystalvape/profiles/commit.txt')..'/'..select(1, path:gsub('crystalvape/', '')), true)
 		end)
 		if not suc or res == '404: Not Found' then
 			error(res)
@@ -61,9 +61,9 @@ local function finishLoading()
 			local teleportScript = [[
 				shared.vapereload = true
 				if shared.VapeDeveloper then
-					loadstring(readfile('newvape/loader.lua'), 'loader')()
+					loadstring(readfile('crystalvape/loader.lua'), 'loader')()
 				else
-					loadstring(game:HttpGet('https://raw.githubusercontent.com/7GrandDadPGN/VapeV4ForRoblox/'..readfile('newvape/profiles/commit.txt')..'/loader.lua', true), 'loader')()
+					loadstring(game:HttpGet('https://raw.githubusercontent.com/celestialteam/crystalvape/'..readfile('crystalvape/profiles/commit.txt')..'/loader.lua', true), 'loader')()
 				end
 			]]
 			if shared.VapeDeveloper then
@@ -85,31 +85,48 @@ local function finishLoading()
 	end
 end
 
-if not isfile('newvape/profiles/gui.txt') then
-	writefile('newvape/profiles/gui.txt', 'new')
+if not isfile('crystalvape/profiles/gui.txt') then
+	writefile('crystalvape/profiles/gui.txt', 'new')
 end
-local gui = readfile('newvape/profiles/gui.txt')
+local gui = readfile('crystalvape/profiles/gui.txt')
 
-if not isfolder('newvape/assets/'..gui) then
-	makefolder('newvape/assets/'..gui)
+if not isfolder('crystalvape/assets/'..gui) then
+	makefolder('crystalvape/assets/'..gui)
 end
-vape = loadstring(downloadFile('newvape/guis/'..gui..'.lua'), 'gui')()
+vape = loadstring(downloadFile('crystalvape/guis/'..gui..'.lua'), 'gui')()
 shared.vape = vape
 
+local games = {
+	['bedwars_lobby'] = {6872265039},
+	['bedwars'] = {8444591321, 8560631822, 6872274481}
+}
+
 if not shared.VapeIndependent then
-	loadstring(downloadFile('newvape/games/universal.lua'), 'universal')()
-	if isfile('newvape/games/'..game.PlaceId..'.lua') then
-		loadstring(readfile('newvape/games/'..game.PlaceId..'.lua'), tostring(game.PlaceId))(...)
-	else
-		if not shared.VapeDeveloper then
-			local suc, res = pcall(function()
-				return game:HttpGet('https://raw.githubusercontent.com/7GrandDadPGN/VapeV4ForRoblox/'..readfile('newvape/profiles/commit.txt')..'/games/'..game.PlaceId..'.lua', true)
-			end)
-			if suc and res ~= '404: Not Found' then
-				loadstring(downloadFile('newvape/games/'..game.PlaceId..'.lua'), tostring(game.PlaceId))(...)
+	loadstring(downloadFile('crystalvape/games/universal.lua'), 'universal')()
+	if isfile('crystalvape/private/games/universal.lua') then
+		loadstring(readfile('crystalvape/private/games/universal.lua'), 'private :: games/universal.lua')()
+	end
+	for place, placeids in games do
+		if table.find(placeids, game.PlaceId) then
+			vape.Place = place
+			if isfile('crystalvape/private/games/'..place..'.lua') then
+				loadstring(readfile('crystalvape/private/games/universal.lua'), 'private :: games/universal.lua')()
+			end
+			if isfile('crystalvape/games/'..place..'.lua') then
+				loadstring(readfile('crystalvape/games/'..place..'.lua'), 'games/'..place)(...)
+			else
+				if not shared.VapeDeveloper then
+					local suc, res = pcall(function()
+						return game:HttpGet('https://raw.githubusercontent.com/celestialteam/crystalvape/'..readfile('crystalvape/profiles/commit.txt')..'/games/'..place..'.lua', true)
+					end)
+					if suc and res ~= '404: Not Found' then
+						loadstring(downloadFile('crystalvape/games/'..place..'.lua'), place)(...)
+					end
+				end
 			end
 		end
 	end
+
 	finishLoading()
 else
 	vape.Init = finishLoading
