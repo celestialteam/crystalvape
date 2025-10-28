@@ -123,4 +123,28 @@ run(function()
 		Tooltip = 'Automatically opens lucky crates, piston inspired!'
 	})
 end)
-	
+
+-- crystalvape
+run(function()
+	local PortalDisabler
+
+	local portals = {
+		workspace.Lobby.TrainingAreaPortal,
+		workspace.Lobby.AfkPortal
+	}
+
+	PortalDisabler = vape.Categories.World:CreateModule({
+		Name = 'PortalDisabler',
+		Function = function(enabled)
+			if enabled then
+				for _, portal in portals do
+					local touch = portal:FindFirstChildWhichIsA('TouchTransmitter', true)
+
+					if touch then
+						touch:Destroy()
+					end
+				end
+			end
+		end
+	})
+end)
