@@ -87,7 +87,7 @@ local getcustomassets = {
 	['crystalvape/assets/new/guisettings.png'] = 'rbxassetid://14368318994',
 	['crystalvape/assets/new/guislider.png'] = 'rbxassetid://14368320020',
 	['crystalvape/assets/new/guisliderrain.png'] = 'rbxassetid://14368321228',
-	['crystalvape/assets/new/guiv4.png'] = 'rbxassetid://14368322199',
+	['crystalvape/assets/new/guiv4.png'] = 'rbxassetid://85785379571566',
 	['crystalvape/assets/new/guivape.png'] = 'rbxassetid://14657521312',
 	['crystalvape/assets/new/info.png'] = 'rbxassetid://14368324807',
 	['crystalvape/assets/new/inventoryicon.png'] = 'rbxassetid://14928011633',
@@ -116,7 +116,7 @@ local getcustomassets = {
 	['crystalvape/assets/new/targetplayers2.png'] = 'rbxassetid://14497397862',
 	['crystalvape/assets/new/targetstab.png'] = 'rbxassetid://14497393895',
 	['crystalvape/assets/new/textguiicon.png'] = 'rbxassetid://14368355456',
-	['crystalvape/assets/new/textv4.png'] = 'rbxassetid://14368357095',
+	['crystalvape/assets/new/textv4.png'] = 'rbxassetid://108069992848219',
 	['crystalvape/assets/new/textvape.png'] = 'rbxassetid://14368358200',
 	['crystalvape/assets/new/utilityicon.png'] = 'rbxassetid://14368359107',
 	['crystalvape/assets/new/vape.png'] = 'rbxassetid://14373395239',
@@ -5796,6 +5796,11 @@ mainapi:CreateCategory({
 	Name = 'Minigames',
 	Icon = getcustomasset('crystalvape/assets/new/miniicon.png'),
 	Size = UDim2.fromOffset(19, 12)
+})
+mainapi:CreateCategory({
+	Name = 'Crystal',
+	Icon = '',
+	Size = UDim2.fromOffset(24, 24)
 })
 mainapi.Categories.Main:CreateDivider('misc')
 
