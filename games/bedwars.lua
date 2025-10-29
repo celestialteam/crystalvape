@@ -60,6 +60,7 @@ local store = {
 	queueType = 'bedwars_test',
 	tools = {}
 }
+shared.CRYSTALVAPE_STORE = store
 local Reach = {}
 local HitBoxes = {}
 local InfiniteFly = {}
@@ -159,9 +160,23 @@ local function getBow()
 end
 
 local function getItem(itemName, inv)
-	for slot, item in (inv or store.inventory.inventory.items) do
-		if item.itemType == itemName then
-			return item, slot
+	if itemName == "rocket_belt" or itemName == "flying_backpack" and not inv then
+		inv = store.inventory.inventory.backpack
+
+		for slot, item in (inv or store.inventory.inventory.items) do
+			if slot == "tool" and item.Name == itemName then
+				return {
+					tool = item,
+					amount = 1,
+					toolType = item.Name
+				}
+			end
+		end
+	else
+		for slot, item in (inv or store.inventory.inventory.items) do
+			if item.itemType == itemName then
+				return item, slot
+			end
 		end
 	end
 	return nil
@@ -741,7 +756,7 @@ run(function()
 		DragonEndFly = debug.getproto(Knit.Controllers.VoidDragonController.flapWings, 1),
 		DragonFly = Knit.Controllers.VoidDragonController.flapWings,
 		DropItem = Knit.Controllers.ItemDropController.dropItemInHand,
-		EquipItem = debug.getproto(require(replicatedStorage.TS.entity.entities['inventory-entity']).InventoryEntity.equipItem, 3),
+		EquipItem = debug.getproto(require(replicatedStorage.TS.entity.entities['inventory-entity']).InventoryEntity.equipItem, 4),
 		FireProjectile = debug.getupvalue(Knit.Controllers.ProjectileController.launchProjectileWithValues, 2),
 		GroundHit = Knit.Controllers.FallDamageController.KnitStart,
 		GuitarHeal = Knit.Controllers.GuitarController.performHeal,
@@ -2236,12 +2251,11 @@ run(function()
 									AttackRemote:FireServer({
 										weapon = sword.tool,
 										chargedAttack = {chargeRatio = 0},
-										lastSwingServerTimeDelta = 0.5,
 										entityInstance = v.Character,
 										validate = {
 											raycast = {},
 											targetPosition = {value = actualRoot.Position},
-											selfPosition = {value = vector.create(0/0,0/0,0/0)}
+											selfPosition = {value = pos}
 										}
 									})
 								end
@@ -2568,8 +2582,10 @@ run(function()
 		end
 	end
 	
+	local LJSpeeds = {}
 	local LongJumpMethods = {
-		cannon = function(_, pos, dir)
+		-- items
+		cannon = function(_, pos, dir, Value)
 			pos = pos - Vector3.new(0, (entitylib.character.HipHeight + (entitylib.character.RootPart.Size.Y / 2)) - 3, 0)
 			local rounded = Vector3.new(math.round(pos.X / 3) * 3, math.round(pos.Y / 3) * 3, math.round(pos.Z / 3) * 3)
 			bedwars.placeBlock(rounded, 'cannon', false)
@@ -2599,7 +2615,7 @@ run(function()
 							local call = bedwars.Client:Get(remotes.CannonLaunch):CallServer({cannonBlockPos = blockpos})
 							if call then
 								bedwars.breakBlock(block, true, true)
-								JumpSpeed = 5.25 * Value.Value
+								JumpSpeed = Value.Value
 								JumpTick = tick() + 2.3
 								Direction = Vector3.new(dir.X, 0, dir.Z).Unit
 								break
@@ -2610,9 +2626,131 @@ run(function()
 				end
 			end)
 		end,
-		cat = function(_, _, dir)
+		fireball = function(item, pos, dir, Value)
+			launchProjectile(item, pos, item.tool.Name, 60, dir)
+			if item.tool.Name == 'beehive_grenade' then
+				task.wait(.4)
+				JumpSpeed = Value.Value
+				JumpTick = tick() + 2.4
+				Direction = Vector3.new(dir.X, 0, dir.Z).Unit
+			end
+		end,
+		grappling_hook = function(item, pos, dir, Value)
+			launchProjectile(item, pos, 'grappling_hook_projectile', 140, dir)
+		end,
+		jade_hammer = function(item, _, dir, Value)
+			if not bedwars.AbilityController:canUseAbility(item.itemType..'_jump') then
+				repeat task.wait() until bedwars.AbilityController:canUseAbility(item.itemType..'_jump') or not LongJump.Enabled
+			end
+	
+			if bedwars.AbilityController:canUseAbility(item.itemType..'_jump') and LongJump.Enabled then
+				bedwars.AbilityController:useAbility(item.itemType..'_jump')
+				JumpSpeed = Value.Value
+				JumpTick = tick() + 2.5
+				Direction = Vector3.new(dir.X, 0, dir.Z).Unit
+			end
+		end,
+		tnt = function(item, pos, dir, Value)
+			pos = pos - Vector3.new(0, (entitylib.character.HipHeight + (entitylib.character.RootPart.Size.Y / 2)) - 3, 0)
+			local rounded = Vector3.new(math.round(pos.X / 3) * 3, math.round(pos.Y / 3) * 3, math.round(pos.Z / 3) * 3)
+			start = Vector3.new(rounded.X, start.Y, rounded.Z) + (dir * (item.itemType == 'pirate_gunpowder_barrel' and 2.6 or 0.2))
+			bedwars.placeBlock(rounded, item.itemType)
+			if item.tool.Name == 'pirate_gunpowder_barrel' then
+				repeat 
+					local block, blockpos = getPlacedBlock(rounded)
+					if not block then task.wait() continue end
+					task.wait(.1)
+					-- TODO: auto hit the barrel
+				until block.Parent == nil or LongJump.Enabled == false
+			end
+		end,
+		wood_dao = function(item, pos, dir, Value)
+			if (lplr.Character:GetAttribute('CanDashNext') or 0) > workspace:GetServerTimeNow() or not bedwars.AbilityController:canUseAbility('dash') then
+				repeat task.wait() until (lplr.Character:GetAttribute('CanDashNext') or 0) < workspace:GetServerTimeNow() and bedwars.AbilityController:canUseAbility('dash') or not LongJump.Enabled
+			end
+	
+			if LongJump.Enabled then
+				bedwars.SwordController.lastAttack = workspace:GetServerTimeNow()
+				switchItem(item.tool, 0.1)
+				replicatedStorage['events-@easy-games/game-core:shared/game-core-networking@getEvents.Events'].useAbility:FireServer('dash', {
+					direction = dir,
+					origin = pos,
+					weapon = item.itemType
+				})
+				JumpSpeed = Value.Value
+				JumpTick = tick() + 2.4
+				Direction = Vector3.new(dir.X, 0, dir.Z).Unit
+			end
+		end,
+		jump_pad = function(_, pos, dir, Value)
+			pos = pos - Vector3.new(0, (entitylib.character.HipHeight + (entitylib.character.RootPart.Size.Y / 2)) - 3, 0)
+			bedwars.placeBlock(pos, 'jump_pad')
+
+			local block, _ = getPlacedBlock(pos)
+			
+			if block and block.Name == 'jump_pad' and (entitylib.character.RootPart.Position - block.Position).Magnitude < 20 then
+				local breaktype = bedwars.ItemMeta[block.Name].block.breakType
+				local tool = store.tools[breaktype]
+				if tool then
+					switchItem(tool.tool)
+				end
+				bedwars.breakBlock(block, true, true)
+				JumpSpeed = Value.Value
+				JumpTick = tick() + 2.5
+				Direction = Vector3.new(dir.X, 0, dir.Z).Unit
+				entitylib.character.RootPart.Velocity = Vector3.zero
+			end
+		end,
+		spear = function(item, pos, dir, Value)
+			launchProjectile(item, pos, 'spear', 60, dir)
+			task.wait(.4)
+			JumpSpeed = Value.Value
+			JumpTick = tick() + 2.5
+			Direction = Vector3.new(dir.X, 0, dir.Z).Unit
+		end,
+		can_of_beans = function(item, pos, dir, Value)
+			game:GetService('ReplicatedStorage'):WaitForChild('rbxts_include'):WaitForChild('node_modules'):WaitForChild('@rbxts'):WaitForChild('net'):WaitForChild('out'):WaitForChild('_NetManaged'):WaitForChild('ConsumeItem'):InvokeServer({
+				item = item.tool
+			})
+			game:GetService('ReplicatedStorage'):WaitForChild('rbxts_include'):WaitForChild('node_modules'):WaitForChild('@rbxts'):WaitForChild('net'):WaitForChild('out'):WaitForChild('_NetManaged'):WaitForChild('CanOfBeansLaunch'):InvokeServer({
+				lookVector = vector.create(math.random(), math.random(), math.random())
+			})
+			task.wait(.1)
+			JumpSpeed = Value.Value
+			JumpTick = tick() + 2.5
+			Direction = Vector3.new(dir.X, 0, dir.Z).Unit
+			entitylib.character.RootPart.Velocity = Vector3.zero
+		end,
+		rocket_belt = function(item, pos, dir, Value)
+			if bedwars.AbilityController:canUseAbility("ROCKET_BELT") then
+				bedwars.AbilityController:useAbility("ROCKET_BELT")
+				JumpSpeed = Value.Value
+				JumpTick = tick() + 2.5
+				Direction = Vector3.new(dir.X, 0, dir.Z).Unit
+				entitylib.character.RootPart.Velocity = Vector3.zero
+			end
+		end,
+		--[[spirit_bridge = function(item, pos, dir, Value)
+			launchProjectile(item, pos, "spirit_bridge", 60, dir)
+			task.wait(.5)
+			JumpSpeed = Value.Value
+			JumpTick = tick() + 2.5
+			Direction = Vector3.new(dir.X, 0, dir.Z).Unit
+		end,]]
+		--[[impulse_gun = function(item, pos, dir)
+			if bedwars.AbilityController:canUseAbility("IMPULSE_GUN") then
+				bedwars.AbilityController:useAbility("IMPULSE_GUN")
+				JumpSpeed = 40
+				JumpTick = tick() + 2.5
+				Direction = Vector3.new(dir.X, -.025, dir.Z).Unit
+				entitylib.character.RootPart.Velocity = Vector3.zero
+			end
+		end,]]
+
+		-- kits
+		cat = function(_, _, dir, Value)
 			LongJump:Clean(vapeEvents.CatPounce.Event:Connect(function()
-				JumpSpeed = 4 * Value.Value
+				JumpSpeed = Value.Value
 				JumpTick = tick() + 2.5
 				Direction = Vector3.new(dir.X, 0, dir.Z).Unit
 				entitylib.character.RootPart.Velocity = Vector3.zero
@@ -2626,48 +2764,6 @@ run(function()
 				bedwars.AbilityController:useAbility('CAT_POUNCE')
 			end
 		end,
-		fireball = function(item, pos, dir)
-			launchProjectile(item, pos, 'fireball', 60, dir)
-		end,
-		grappling_hook = function(item, pos, dir)
-			launchProjectile(item, pos, 'grappling_hook_projectile', 140, dir)
-		end,
-		jade_hammer = function(item, _, dir)
-			if not bedwars.AbilityController:canUseAbility(item.itemType..'_jump') then
-				repeat task.wait() until bedwars.AbilityController:canUseAbility(item.itemType..'_jump') or not LongJump.Enabled
-			end
-	
-			if bedwars.AbilityController:canUseAbility(item.itemType..'_jump') and LongJump.Enabled then
-				bedwars.AbilityController:useAbility(item.itemType..'_jump')
-				JumpSpeed = 1.4 * Value.Value
-				JumpTick = tick() + 2.5
-				Direction = Vector3.new(dir.X, 0, dir.Z).Unit
-			end
-		end,
-		tnt = function(item, pos, dir)
-			pos = pos - Vector3.new(0, (entitylib.character.HipHeight + (entitylib.character.RootPart.Size.Y / 2)) - 3, 0)
-			local rounded = Vector3.new(math.round(pos.X / 3) * 3, math.round(pos.Y / 3) * 3, math.round(pos.Z / 3) * 3)
-			start = Vector3.new(rounded.X, start.Y, rounded.Z) + (dir * (item.itemType == 'pirate_gunpowder_barrel' and 2.6 or 0.2))
-			bedwars.placeBlock(rounded, item.itemType, false)
-		end,
-		wood_dao = function(item, pos, dir)
-			if (lplr.Character:GetAttribute('CanDashNext') or 0) > workspace:GetServerTimeNow() or not bedwars.AbilityController:canUseAbility('dash') then
-				repeat task.wait() until (lplr.Character:GetAttribute('CanDashNext') or 0) < workspace:GetServerTimeNow() and bedwars.AbilityController:canUseAbility('dash') or not LongJump.Enabled
-			end
-	
-			if LongJump.Enabled then
-				bedwars.SwordController.lastAttack = workspace:GetServerTimeNow()
-				switchItem(item.tool, 0.1)
-				replicatedStorage['events-@easy-games/game-core:shared/game-core-networking@getEvents.Events'].useAbility:FireServer('dash', {
-					direction = dir,
-					origin = pos,
-					weapon = item.itemType
-				})
-				JumpSpeed = 4.5 * Value.Value
-				JumpTick = tick() + 2.4
-				Direction = Vector3.new(dir.X, 0, dir.Z).Unit
-			end
-		end
 	}
 	for _, v in {'stone_dao', 'iron_dao', 'diamond_dao', 'emerald_dao'} do
 		LongJumpMethods[v] = LongJumpMethods.wood_dao
@@ -2675,6 +2771,7 @@ run(function()
 	LongJumpMethods.void_axe = LongJumpMethods.jade_hammer
 	LongJumpMethods.siege_tnt = LongJumpMethods.tnt
 	LongJumpMethods.pirate_gunpowder_barrel = LongJumpMethods.tnt
+	LongJumpMethods.beehive_grenade = LongJumpMethods.fireball
 	
 	LongJump = vape.Categories.Blatant:CreateModule({
 		Name = 'LongJump',
@@ -2702,7 +2799,7 @@ run(function()
 				LongJump:Clean(vapeEvents.GrapplingHookFunctions.Event:Connect(function(dataTable)
 					if dataTable.hookFunction == 'PLAYER_IN_TRANSIT' then
 						local vec = entitylib.character.RootPart.CFrame.LookVector
-						JumpSpeed = 2.5 * Value.Value
+						JumpSpeed = LJSpeeds.grappling_hook.Value
 						JumpTick = tick() + 2.5
 						Direction = Vector3.new(vec.X, 0, vec.Z).Unit
 					end
@@ -2733,8 +2830,8 @@ run(function()
 					end
 				end))
 	
-				if store.hand and LongJumpMethods[store.hand.tool.Name] then
-					task.spawn(LongJumpMethods[store.hand.tool.Name], getItem(store.hand.tool.Name), start, (CameraDir.Enabled and gameCamera or entitylib.character.RootPart).CFrame.LookVector)
+				if store.hand and type(store.hand) == "table" and store.hand.tool and LongJumpMethods[store.hand.tool.Name] then
+					task.spawn(LongJumpMethods[store.hand.tool.Name], getItem(store.hand.tool.Name), start, (CameraDir.Enabled and gameCamera or entitylib.character.RootPart).CFrame.LookVector, LJSpeeds[store.hand.tool.Name])
 					return
 				end
 	
@@ -2756,15 +2853,26 @@ run(function()
 		end,
 		Tooltip = 'Lets you jump farther'
 	})
-	Value = LongJump:CreateSlider({
-		Name = 'Speed',
-		Min = 1,
-		Max = 37,
-		Default = 37,
-		Suffix = function(val)
-			return val == 1 and 'stud' or 'studs'
+	for method, func in LongJumpMethods do
+		if method:find("dao") and method ~= "wood_dao" then
+			task.spawn(function()
+				if not LJSpeeds[method] then
+					repeat task.wait() until LJSpeeds.wood_dao
+					LJSpeeds[method] = LJSpeeds.wood_dao
+				end
+			end)
+		else
+			LJSpeeds[method] = LongJump:CreateSlider({
+				Name = `Speed : {method:gsub("_", " ")}`,
+				Min = 1,
+				Max = 37,
+				Default = 37,
+				Suffix = function(val)
+					return val == 1 and 'stud' or 'studs'
+				end
+			})
 		end
-	})
+	end
 	CameraDir = LongJump:CreateToggle({
 		Name = 'Camera Direction'
 	})
@@ -3029,7 +3137,7 @@ run(function()
 		Function = function(callback)
 			if callback then
 				repeat
-					if (workspace:GetServerTimeNow() - bedwars.SwordController.lastAttack) > 0.5 then
+					if true then
 						local ent = entitylib.EntityPosition({
 							Part = 'RootPart',
 							Range = Range.Value,
@@ -6804,6 +6912,7 @@ end)
 run(function()
 	local Value
 	local oldclickhold, oldshowprogress
+	local Instant
 	
 	local FastConsume = vape.Categories.Inventory:CreateModule({
 		Name = 'FastConsume',
@@ -6812,6 +6921,13 @@ run(function()
 				oldclickhold = bedwars.ClickHold.startClick
 				oldshowprogress = bedwars.ClickHold.showProgress
 				bedwars.ClickHold.startClick = function(self)
+					if Instant.Value then
+						if self.onComplete then self.onComplete() end
+						if self.onPartialComplete then self.onPartialComplete(1) end
+						self:hideProgress()
+						self.startedClickTime = tick() / 5000
+						return
+					end
 					self.startedClickTime = tick()
 					local handle = self:showProgress()
 					local clicktime = self.startedClickTime
@@ -6870,6 +6986,9 @@ run(function()
 		Name = 'Multiplier',
 		Min = 0,
 		Max = 100
+	})
+	Instant = FastConsume:CreateToggle({
+		Name = 'Instant'
 	})
 end)
 	
@@ -8270,14 +8389,27 @@ run(function()
 	local Depth
 	local Horizontal
 	local Vertical
+	local Scaling
 	local NoBob
 	local Rots = {}
 	local old, oldc1
+
+	local function scaleVM(viewmodel)
+		if not viewmodel then return end
+		
+		local accessory = viewmodel:FindFirstChildOfClass('Accessory')
+	
+		if accessory then
+			local thing = accessory:FindFirstChild('Handle')
+			thing.Size = replicatedStorage.Items:FindFirstChild(accessory.Name):FindFirstChildWhichIsA('BasePart').Size * Scaling.Value
+		end
+	end
 	
 	Viewmodel = vape.Legit:CreateModule({
 		Name = 'Viewmodel',
 		Function = function(callback)
 			local viewmodel = gameCamera:FindFirstChild('Viewmodel')
+			scaleVM(viewmodel)
 			if callback then
 				old = bedwars.ViewmodelController.playAnimation
 				oldc1 = viewmodel and viewmodel.RightHand.RightWrist.C1 or CFrame.identity
@@ -8366,6 +8498,16 @@ run(function()
 				Viewmodel:Toggle()
 				Viewmodel:Toggle()
 			end
+		end
+	})
+	Scaling = Viewmodel:CreateSlider({
+		Name = 'Scale',
+		Min = .1,
+		Max = 1.5,
+		Default = 1,
+		Decimal = 10,
+		Function = function(val)
+			scaleVM(gameCamera:FindFirstChild('Viewmodel'))
 		end
 	})
 end)

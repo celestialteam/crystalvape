@@ -6221,12 +6221,25 @@ textguigradientv4 = textgui:CreateToggle({
 	Darker = true,
 	Visible = false
 })
+local textguimodulegradientspeed
 local textguimodulegradient = textgui:CreateToggle({
 	Name = 'Module Gradient',
+	Function = function(v)
+		mainapi:UpdateTextGUI()
+		textguimodulegradientspeed.Object.Visible = v
+	end,
+	Visible = true
+})
+textguimodulegradientspeed = textgui:CreateSlider({
+	Name = 'Speed',
+	Min = 1,
+	Max = 15,
+	Default = 3,
 	Function = function()
 		mainapi:UpdateTextGUI()
 	end,
-	Visible = true
+	Visible = false,
+	Darker = true
 })
 local textguianimations = textgui:CreateToggle({
 	Name = 'Animations',
@@ -6765,6 +6778,7 @@ function mainapi:UpdateTextGUI(afterload)
 					holdercolorline.Size = UDim2.new(0, 2, 1, 0)
 					holdercolorline.Position = right and UDim2.new(1, -5, 0, 0) or UDim2.new()
 					holdercolorline.BorderSizePixel = 0
+					holdercolorline.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
 					holdercolorline.Parent = holderbackground
 				end
 				local holdertext = Instance.new('TextLabel')
@@ -6773,6 +6787,7 @@ function mainapi:UpdateTextGUI(afterload)
 				holdertext.BorderSizePixel = 0
 				holdertext.Text = i..(v.ExtraText and " <font color='#A8A8A8'>"..v.ExtraText()..'</font>' or '')
 				holdertext.TextSize = 15
+				holdertext.TextColor3 = Color3.fromRGB(255, 255, 255)
 				holdertext.FontFace = textguifont.Value
 				holdertext.RichText = true
 				local size = getfontsize(removeTags(holdertext.Text), holdertext.TextSize, holdertext.FontFace)
@@ -6801,6 +6816,24 @@ function mainapi:UpdateTextGUI(afterload)
 					end
 				else
 					holder.Size = v.Enabled and holdersize or UDim2.fromOffset()
+				end
+				if textguimodulegradient.Enabled then
+					-- TODO: fix whatever issue ts causes
+					local gradient: UIGradient = holdertext:FindFirstChild('UIGradient') or Instance.new('UIGradient', holdertext)
+					local bggradient: UIGradient = holdercolorline:FindFirstChild('UIGradient') or Instance.new('UIGradient', holdercolorline)
+					spawn(function()
+						repeat
+							gradient.Color = ColorSequence.new({
+								ColorSequenceKeypoint.new(0, TotallyLightColor(RiseColor(holdertext.AbsolutePosition), .1)),
+								ColorSequenceKeypoint.new(1, TotallyLightColor(RiseColor((holdertext.AbsolutePosition + Vector2.new(0, 5))) , .2))
+							})
+							bggradient.Color = ColorSequence.new({
+								ColorSequenceKeypoint.new(0, TotallyLightColor(RiseColor(holdercolorline.AbsolutePosition), .1)),
+								ColorSequenceKeypoint.new(1, TotallyLightColor(RiseColor((holdercolorline.AbsolutePosition + Vector2.new(0, 5))), .2))
+							})
+							task.wait()
+						until textguimodulegradient.Enabled == false or not mainapi.Loaded or holdertext.Parent == nil or holdercolorline.Parent == nil
+					end)
 				end
 				table.insert(VapeLabels, {
 					Object = holder,
@@ -6841,7 +6874,7 @@ local colors = {
 	Secondary = Color3.fromRGB(255, 242, 215)
 }
 local function getBlendFactor(vec)
-	return math.sin(DateTime.now().UnixTimestampMillis / 600 + vec.X * 0.005 + vec.Y * 0.06) * 0.5 + 0.5
+	return math.sin(DateTime.now().UnixTimestampMillis / (700 / textguimodulegradientspeed.Value) + vec.X * 0.005 + vec.Y * 0.06) * 0.5 + 0.5
 end
 function RiseColor(vec)
 	local blend = getBlendFactor(vec)
@@ -6858,7 +6891,6 @@ function TotallyLightColor(a, b)
 	return a:Lerp(Color3.new(1,1,1), b)
 end
 -- rise color end
-local gradienting = {}
 function mainapi:UpdateGUI(hue, sat, val, default)
 	if mainapi.Loaded == nil then return end
 	if not default and mainapi.GUIColor.Rainbow then return end
@@ -6871,34 +6903,12 @@ function mainapi:UpdateGUI(hue, sat, val, default)
 			ColorSequenceKeypoint.new(0, Color3.new(1, 1, 1)),
 			ColorSequenceKeypoint.new(1, Color3.new(1, 1, 1))
 		})
-		VapeLabelCustom.TextColor3 = textguicolorcustomtoggle.Enabled and Color3.fromHSV(textguicolorcustom.Hue, textguicolorcustom.Sat, textguicolorcustom.Value) or VapeLogoGradient.Color.Keypoints[2].Value
+		VapeLabelCustom.TextColor3 = textguimodulegradient and Color3.fromRGB(255, 255, 255)
+			or textguicolorcustomtoggle.Enabled and Color3.fromHSV(textguicolorcustom.Hue, textguicolorcustom.Sat, textguicolorcustom.Value) or VapeLogoGradient.Color.Keypoints[2].Value
 
 		local customcolor = textguicolordrop.Value == 'Custom color' and Color3.fromHSV(textguicolor.Hue, textguicolor.Sat, textguicolor.Value) or nil
 		for i, v in VapeLabels do
-			if textguimodulegradient.Enabled then
-				local gradient: UIGradient = v.Text:FindFirstChildWhichIsA('UIGradient') or Instance.new('UIGradient', v.Text)
-				gradient.Rotation += 25
-				local bggradient: UIGradient = v.Color:FindFirstChildWhichIsA('UIGradient') or Instance.new('UIGradient', v.Color)
-				spawn(function()
-					if gradienting[v.Text] then return end
-					gradienting[v.Text] = true
-					-- TODO: fix this becoming black or whatever when a module gets toggled
-					if v.Text.TextColor3 ~= Color3.fromRGB(255, 255, 255) then v.Text.TextColor3 = Color3.fromRGB(255, 255, 255) end
-					if v.Color.BackgroundColor3 ~= Color3.fromRGB(255, 255, 255) then v.Color.BackgroundColor3 = Color3.fromRGB(255, 255, 255) end
-					repeat
-						task.wait()
-						gradient.Color = ColorSequence.new({
-							ColorSequenceKeypoint.new(0, TotallyLightColor(RiseColor(v.Text.AbsolutePosition), .1)),
-							ColorSequenceKeypoint.new(1, TotallyLightColor(RiseColor((v.Text.AbsolutePosition + Vector2.new(0, 25)) / 2), .2))
-						})
-						bggradient.Color = ColorSequence.new({
-							ColorSequenceKeypoint.new(0, TotallyLightColor(RiseColor(v.Color.AbsolutePosition), .1)),
-							ColorSequenceKeypoint.new(1, TotallyLightColor(RiseColor((v.Color.AbsolutePosition + Vector2.new(0, 25)) / 2), .2))
-						})
-					until textguimodulegradient.Enabled == false or not mainapi.Loaded
-					gradienting[v.Text] = false
-				end)
-			else
+			if not textguimodulegradient.Enabled then
 				v.Text.TextColor3 = customcolor or (mainapi.GUIColor.Rainbow and Color3.fromHSV(mainapi:Color((hue - ((textguigradient and i + 2 or i) * 0.025)) % 1)) or VapeLogoGradient.Color.Keypoints[2].Value)
 				if v.Color then
 					v.Color.BackgroundColor3 = v.Text.TextColor3
