@@ -98,7 +98,8 @@ shared.vape = vape
 
 local games = {
 	['bedwars_lobby'] = {6872265039},
-	['bedwars'] = {8444591321, 8560631822, 6872274481}
+	['bedwars'] = {8444591321, 8560631822, 6872274481},
+	['washiez'] = {6764533218, 6868593153, 6884042552}
 }
 
 if not shared.VapeIndependent then
@@ -110,7 +111,7 @@ if not shared.VapeIndependent then
 		if table.find(placeids, game.PlaceId) then
 			vape.Place = place
 			if isfile('crystalvape/private/games/'..place..'.lua') then
-				loadstring(readfile('crystalvape/private/games/universal.lua'), 'private :: games/universal.lua')()
+				loadstring(readfile('crystalvape/private/games/'..place..'.lua'), 'private :: games/universal.lua')(...)
 			end
 			if isfile('crystalvape/games/'..place..'.lua') then
 				loadstring(readfile('crystalvape/games/'..place..'.lua'), 'games/'..place)(...)

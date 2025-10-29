@@ -24,7 +24,7 @@ local guiService = cloneref(game:GetService('GuiService'))
 local coreGui = cloneref(game:GetService('CoreGui'))
 local starterGui = cloneref(game:GetService('StarterGui'))
 
-local isnetworkowner = identifyexecutor and table.find({'AWP', 'Nihon'}, ({identifyexecutor()})[1]) and isnetworkowner or function()
+local isnetworkowner = identifyexecutor and table.find({'AWP', 'Nihon', 'Volcano'}, ({identifyexecutor()})[1]) and isnetworkowner or function()
 	return true
 end
 local gameCamera = workspace.CurrentCamera
@@ -61,6 +61,7 @@ local store = {
 	tools = {}
 }
 shared.CRYSTALVAPE_STORE = store
+local RemotesInstance = replicatedStorage:WaitForChild("rbxts_include").node_modules["@rbxts"].net.out._NetManaged
 local Reach = {}
 local HitBoxes = {}
 local InfiniteFly = {}
@@ -1299,61 +1300,6 @@ run(function()
 end)
 	
 run(function()
-	local old
-	
-	AutoCharge = vape.Categories.Combat:CreateModule({
-	    Name = 'AutoCharge',
-	    Function = function(callback)
-	        debug.setconstant(bedwars.SwordController.attackEntity, 58, callback and 'damage' or 'multiHitCheckDurationSec')
-	        if callback then
-	            local chargeSwingTime = 0
-	            local canSwing
-	
-	            old = bedwars.SwordController.sendServerRequest
-	            bedwars.SwordController.sendServerRequest = function(self, ...)
-	                if (os.clock() - chargeSwingTime) < AutoChargeTime.Value then return end
-	                self.lastSwingServerTimeDelta = 0.5
-	                chargeSwingTime = os.clock()
-	                canSwing = true
-	
-	                local item = self:getHandItem()
-	                if item and item.tool then
-	                    self:playSwordEffect(bedwars.ItemMeta[item.tool.Name], false)
-	                end
-	
-	                return old(self, ...)
-	            end
-	
-	            oldSwing = bedwars.SwordController.playSwordEffect
-	            bedwars.SwordController.playSwordEffect = function(...)
-	                if not canSwing then return end
-	                canSwing = false
-	                return oldSwing(...)
-	            end
-	        else
-	            if old then
-	                bedwars.SwordController.sendServerRequest = old
-	                old = nil
-	            end
-	
-	            if oldSwing then
-	                bedwars.SwordController.playSwordEffect = oldSwing
-	                oldSwing = nil
-	            end
-	        end
-	    end,
-	    Tooltip = 'Allows you to get charged hits while spam clicking.'
-	})
-	AutoChargeTime = AutoCharge:CreateSlider({
-	    Name = 'Charge Time',
-	    Min = 0,
-	    Max = 0.5,
-	    Default = 0.4,
-	    Decimal = 100
-	})
-end)
-	
-run(function()
 	local AutoClicker
 	local CPS
 	local BlockCPS = {}
@@ -1694,7 +1640,7 @@ run(function()
 									local lastTeleport = lplr:GetAttribute('LastTeleported')
 									local connection
 									connection = runService.PreSimulation:Connect(function()
-										if vape.Modules.Fly.Enabled or vape.Modules.InfiniteFly.Enabled or vape.Modules.LongJump.Enabled then
+										if vape.Modules.Fly.Enabled or (vape.Modules.InfiniteFly and vape.Modules.InfiniteFly).Enabled or vape.Modules.LongJump.Enabled then
 											connection:Disconnect()
 											AntiFallDirection = nil
 											return
@@ -8611,4 +8557,275 @@ run(function()
 		end,
 		Tooltip = 'Spawns and teleports a raven OR missile to a player\nnear your mouse.'
 	})
+end)
+
+run(function()
+	local AntiHit
+	local Range, IdleTime, HideTime
+
+	AntiHit = vape.Categories.Crystal:CreateModule({
+		Name = 'AntiHit',
+		Tooltip = '[USELESS] Beat skids easily, or just prevent dying', -- hit reg changed so much it probably uses previous positions so this shit is useless
+		Function = function(enabled)
+			if enabled then
+				repeat
+					local plrs = entitylib.AllPosition({
+						Range = Range.Value,
+						Wallcheck = false,
+						Part = 'RootPart',
+						Players = true
+					})
+
+					for _, player in plrs do
+						local hrp = lplr.Character and lplr.Character.HumanoidRootPart
+						local stop = false
+						local startY = hrp.Position.Y
+
+						local fakepart = Instance.new('Part')
+						fakepart.Transparency = .9999
+						fakepart.Anchored = true
+						fakepart.CFrame = CFrame.new(hrp.Position)
+
+						workspace.CurrentCamera.CameraSubject = fakepart
+						hrp.CFrame = CFrame.new(hrp.Position.X, hrp.Position.Y + 150, hrp.Position.Z)
+
+						spawn(function()
+							repeat
+								task.wait()
+								fakepart.CFrame = CFrame.new(hrp.Position.X, startY, hrp.Position.Z)
+							until stop or not hrp.Parent
+						end)
+
+						task.wait(HideTime.Value)
+
+						stop = true
+						fakepart:Destroy()
+						workspace.CurrentCamera.CameraSubject = hrp.Parent.Humanoid
+						hrp.CFrame = fakepart.CFrame * CFrame.new(0, 3.5, 0)
+
+						task.wait(IdleTime.Value)
+						break
+					end
+					task.wait()
+				until not AntiHit.Enabled
+			end
+		end
+	})
+
+	Range = AntiHit:CreateSlider({
+		Name = 'Range',
+		Min = 1,
+		Max = 50,
+		Default = 25
+	})
+
+	IdleTime = AntiHit:CreateSlider({
+		Name = 'Idle Time',
+		Min = 1,
+		Max = 5,
+		Default = .3
+	})
+
+	HideTime = AntiHit:CreateSlider({
+		Name = 'Hide Time',
+		Min = 1,
+		Max = 5,
+		Default = .6
+	})
+end)
+
+run(function() -- vape.gg
+ 	local Explosions
+        
+    Explosions = vape.Categories.Crystal:CreateModule({
+        Name = 'Explosions',
+        Tooltip = 'Visualizes the area in which entities will take damage, and where blocks will break.',
+        Function = function(enabled)
+            if enabled then
+                local max = {siege_tnt=46,tnt=40}
+                Explosions:Clean(workspace.DescendantAdded:Connect(function(a) -- TODO: fix cant build near the zones
+                    if a.Name == 'siege_tnt' or a.Name == 'tnt' then
+                        -- damage
+                        local breaka = Instance.new('Part', a)
+                        breaka.Shape = Enum.PartType.Ball
+                        breaka.Color = Color3.fromRGB(255, 0, 0)
+                        breaka.CFrame = a.CFrame
+                        breaka.Transparency = .5
+                        breaka.CanCollide = false
+                        breaka.Size = Vector3.one * max[a.Name] -- TODO: visualize actually based on siege tnt/tnt break range
+                        breaka.Material = Enum.Material.ForceField
+                        breaka.CastShadow = false
+                        breaka.Anchored = true
+
+                        -- block break
+                        local damage = Instance.new('Part', a)
+                        damage.Shape = Enum.PartType.Ball
+                        damage.Color = Color3.fromRGB(255, 165, 0)
+                        damage.CFrame = a.CFrame
+                        damage.Transparency = .8
+                        damage.CanCollide = false
+                        damage.Size = Vector3.one * (max[a.Name] - 20)
+                        damage.Material = Enum.Material.SmoothPlastic
+                        damage.CastShadow = false
+
+                        while a.Parent ~= nil do
+                            breaka.CFrame = a.CFrame
+                            damage.CFrame = a.CFrame
+                            task.wait()
+                        end
+						
+                        damage:Destroy()
+                        breaka:Destroy()
+                    end
+                end))
+            end
+        end
+    })
+end)
+
+run(function()
+	local LagbackNotifier
+	
+	LagbackNotifier = vape.Categories.Crystal:CreateModule({
+        Name = 'LagbackNotifier',
+        Function = function(enabled)
+            if enabled then
+                local lastnetowner = true
+                LagbackNotifier:Clean(lplr:GetAttributeChangedSignal('LastTeleported'):Connect(function()
+                    vape:CreateNotification('LagbackNotifier', 'Teleport detected', 3)
+                end))
+                LagbackNotifier:Clean(runService.Heartbeat:Connect(function()
+                    local char = lplr.Character
+                    local hrp = char and char:FindFirstChild('HumanoidRootPart')
+
+                    if hrp then
+                        if lastnetowner ~= isnetworkowner(hrp) then
+                            lastnetowner = isnetworkowner(hrp)
+                            if not lastnetowner then
+                                vape:CreateNotification('LagbackNotifier', 'Lagback detected', 3)
+                            end
+                        end
+                    end
+                end))
+            end
+        end
+    })
+end)
+
+run(function()
+	local MassHammerExploit
+
+    MassHammerExploit = vape.Categories.Crystal:CreateModule({
+        Name = 'MassHammerExploit',
+        Tooltip = 'Allows you to have infinite health [Requires mass hammer]',
+        Function = function(enabled)
+            while MassHammerExploit.Enabled do
+				local char = lplr.Character
+                if char then
+                    local current = store.hand
+                    local masshammer = getItem('mass_hammer')
+                    if char:GetAttribute('Health') ~= char:GetAttribute('MaxHealth') and masshammer then
+                        switchItem(masshammer.tool, .2)
+                        repeat RemotesInstance.UseMassHammer:FireServer() task.wait() until char:GetAttribute('Health') >= char:GetAttribute('MaxHealth')
+                        task.wait(.1)
+                        switchItem(current.tool, .2)
+                    end
+                end
+                task.wait()
+            end
+        end
+    })
+end)
+
+run(function()
+	local EmoteSpammer
+    local Emote
+
+    EmoteSpammer = vape.Categories.Crystal:CreateModule({
+        Name = 'EmoteSpammer',
+        Tooltip = '',
+        Function = function(enabled)
+            if enabled then
+                repeat
+                    for _, v in Emote.ListEnabled do
+                        RemotesInstance.Emote:InvokeServer({
+                            emoteType = v
+                        })
+                    end
+
+                    task.wait()
+                until not EmoteSpammer.Enabled
+            end
+        end
+    })
+
+    Emote = EmoteSpammer:CreateTextList({
+        Name = 'Emote',
+        Placeholder = 'bed_break',
+        Tooltip = ''
+    })
+end)
+
+run(function()
+    local Disabler
+    -- zephyr 'disables' anticheat aslong as it has a stack >1
+    Disabler = vape.Categories.Crystal:CreateModule({
+        Name = 'Disabler',
+        Tooltip = 'Disables the anticheat',
+        Function = function(enabled)
+        if not enabled then return end
+            repeat
+                local hammer = getItem('jade_hammer') or getItem('void_axe')
+
+                if store.equippedKit == 'glacial_skater' then -- Krystal
+                    RemotesInstance.MomentumUpdate:FireServer({
+                        momentumValue = 1e10
+                    })
+                elseif store.equippedKit == 'harpoon' then
+                    -- TODO
+                -- may remove.
+                elseif hammer then
+                    if not bedwars.AbilityController:canUseAbility(hammer.itemType..'_jump') then
+                        repeat task.wait() until bedwars.AbilityController:canUseAbility(hammer.itemType..'_jump') or not Disabler.Enabled
+                        end
+            
+                    if bedwars.AbilityController:canUseAbility(hammer.itemType..'_jump') and Disabler.Enabled then
+                        bedwars.AbilityController:useAbility(hammer.itemType..'_jump')
+                        vape:CreateNotification("Disabler", "Temporarily disabled", hammer.tool.Name == 'jade_hammer' and 2.8 or .8) -- 3.6 total, 2.8 safe
+                    end
+                elseif getItem('hang_glider') then
+                    RemotesInstance.HangGliderUse:FireServer({})
+                    for _, glider in (workspace:FindFirstChild("Gliders") or Instance.new("Folder")):GetChildren() do -- TODO check if its in every game
+                        if glider:GetAttribute("GliderOwner") == lplr.UserId then
+                            glider:Destroy()
+                            vape:CreateNotification("Disabler", "Successfully disabled!", 6)
+                        end
+                    end
+                    repeat
+                        local root = entitylib.character.RootPart
+                        task.wait(.5)
+                        root.CFrame += Vector3.new(0, 2, 0)
+                    until not Disabler.Enabled or not entitylib.isAlive
+                
+				
+					if getItem('flying_backpack') then
+						if RemotesInstance.FlyingBackpackFlap:InvokeServer() then
+							vape:CreateNotification("Disabler", "Float disabled for 2.8s", 2.8)
+						end
+					end
+                    --[[for _, connection in getconnections(game:GetService("UserInputService").JumpRequest) do
+                        local script = debug.info(connection.Function, "s")
+                        if script.Name == "flying-backpack-controller" then
+                            connection:Disable()
+                        end
+                    end]]
+                    task.wait(2.8)
+                end
+                -- float disabler
+                -- TODO: zephyr kit disabler
+                --     : jade hammer, void regent hammer or wtv its called, yuzi, scythe??(patched so cant)
+                task.wait()
+            until not Disabler.Enabled
+        end
+    })
 end)
