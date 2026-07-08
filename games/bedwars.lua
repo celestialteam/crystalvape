@@ -42,7 +42,8 @@ local whitelist = vape.Libraries.whitelist
 local prediction = vape.Libraries.prediction
 local getfontsize = vape.Libraries.getfontsize
 local getcustomasset = vape.Libraries.getcustomasset
-
+local useAbility = replicatedStorage['events-@easy-games/game-core:shared/game-core-networking@getEvents.Events'].useAbility
+-- skiddo bro hotfix from github best
 local store = {
 	attackReach = 0,
 	attackReachUpdate = tick(),
