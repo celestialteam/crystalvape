@@ -2695,13 +2695,6 @@ run(function()
 
 		-- kits
 		cat = function(_, _, dir, Value)
-			LongJump:Clean(vapeEvents.CatPounce.Event:Connect(function()
-				JumpSpeed = Value.Value
-				JumpTick = tick() + 2.5
-				Direction = Vector3.new(dir.X, 0, dir.Z).Unit
-				entitylib.character.RootPart.Velocity = Vector3.zero
-			end))
-	
 			if not bedwars.AbilityController:canUseAbility('CAT_POUNCE') then
 				repeat task.wait() until bedwars.AbilityController:canUseAbility('CAT_POUNCE') or not LongJump.Enabled
 			end
@@ -2709,6 +2702,11 @@ run(function()
 			if bedwars.AbilityController:canUseAbility('CAT_POUNCE') and LongJump.Enabled then
 				bedwars.AbilityController:useAbility('CAT_POUNCE')
 			end
+
+			JumpSpeed = Value.Value
+			JumpTick = tick() + 2.5
+			Direction = Vector3.new(dir.X, 0, dir.Z).Unit
+			entitylib.character.RootPart.Velocity = Vector3.zero
 		end,
 	}
 	for _, v in {'stone_dao', 'iron_dao', 'diamond_dao', 'emerald_dao'} do
