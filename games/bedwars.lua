@@ -2694,19 +2694,20 @@ run(function()
 		end,]]
 
 		-- kits
+
 		cat = function(_, _, dir, Value)
 			if not bedwars.AbilityController:canUseAbility('CAT_POUNCE') then
 				repeat task.wait() until bedwars.AbilityController:canUseAbility('CAT_POUNCE') or not LongJump.Enabled
 			end
 	
 			if bedwars.AbilityController:canUseAbility('CAT_POUNCE') and LongJump.Enabled then
-				bedwars.AbilityController:useAbility('CAT_POUNCE')
-			end
+				useAbility:FireServer('CAT_POUNCE', {direction=workspace.CurrentCamera.CFrame.LookVector * 15})
 
-			JumpSpeed = Value.Value
-			JumpTick = tick() + 2.5
-			Direction = Vector3.new(dir.X, 0, dir.Z).Unit
-			entitylib.character.RootPart.Velocity = Vector3.zero
+				bedwars.AbilityController:useAbility('CAT_POUNCE')
+				JumpSpeed = Value.Value
+				JumpTick = tick() + 2.5
+				Direction = Vector3.new(dir.X, 0, dir.Z).Unit
+			end
 		end,
 	}
 	for _, v in {'stone_dao', 'iron_dao', 'diamond_dao', 'emerald_dao'} do
